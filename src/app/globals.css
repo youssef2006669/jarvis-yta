@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0a0a0a;
+  --color-foreground: #f8fafc;
+  --color-jarvis-blue: #3b82f6;
+}
+
+:root {
+  background-color: #0a0a0a;
+  color: #f8fafc;
+}
+
+body {
+  margin: 0;
+  background-color: #0a0a0a;
+  overflow: hidden;
+}
+
+/* Custom Scrollbar for the Chat */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #3b82f6;
+  border-radius: 10px;
+}

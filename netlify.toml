@@ -1,0 +1,15 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20" # Change this from 18 to 20
+  NEXT_USE_NETLIFY_EDGE = "true"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[functions."*"]
+  external_node_modules = ["firebase"]
+  included_files = ["src/lib/firebase.ts"]
+  timeout = 26
