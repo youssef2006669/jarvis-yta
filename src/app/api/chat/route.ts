@@ -33,7 +33,16 @@ export async function POST(req: Request) {
       ],
     });
 
-    return NextResponse.json({ content: response.choices[0].message.content });
+// --- CORS-ENABLED RESPONSE ---
+    return new NextResponse(JSON.stringify({ content: response.choices[0].message.content }), {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Content-Type": "application/json",
+      },
+    });
 
   } catch (error: any) {
     console.error("❌ Jarvis-yta Core Error:", error.message);
@@ -41,4 +50,15 @@ export async function POST(req: Request) {
       content: "Sir, the Groq satellite uplink is experiencing interference. Please verify the API key in the Yousco secure environment." 
     });
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
 }
