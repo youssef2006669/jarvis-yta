@@ -11,30 +11,35 @@ const groq = new OpenAI({
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const body = await req.json();
+    
+    // Ensure 'messages' exists (even if the Watch sends a simple string)
+    const messages = body.messages || [{ role: "user", content: body.content || "Report status." }];
 
     const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile", 
       messages: [
-       {
-  role: "system",
-  content: `You are JARVIS-YTA, a technical interface for Youssef.
-  
-  CONTEXT:
-  - Youssef is a Dental Student in Alexandria & a Web Developer (React/Astro).
-  - "Yousco" is his personal brand/concept, not a corporate industry.
-  
-  RULES:
-  1. No Hallucinations: If the 'memories' array is empty, the schedule is empty. 
-  2. Precision: Use dental terminology for university tasks and dev terms for coding.
-  3. Brevity: High-efficiency, short responses only. Address him as Youssef.`
-},
-        ...messages.map((m: any) => ({ role: m.role, content: m.content })),
+        {
+          role: "system",
+          content: `You are JARVIS-YTA, a technical interface for Youssef.
+          
+          CONTEXT:
+          - Youssef is a Dental Student in Alexandria & a Web Developer (React/Astro).
+          - "Yousco" is his personal brand/concept, not a corporate industry.
+          
+          RULES:
+          1. No Hallucinations: If the 'memories' array is empty, the schedule is empty. 
+          2. Precision: Use dental terminology for university tasks and dev terms for coding.
+          3. Brevity: High-efficiency, short responses only. Address him as Youssef.`
+        },
+        ...messages,
       ],
     });
 
-// --- CORS-ENABLED RESPONSE ---
-    return new NextResponse(JSON.stringify({ content: response.choices[0].message.content }), {
+    const content = response.choices[0].message.content;
+
+    // --- UNIVERSAL RESPONSE WITH CORS ---
+    return new NextResponse(JSON.stringify({ content }), {
       status: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
@@ -45,12 +50,16 @@ export async function POST(req: Request) {
     });
 
   } catch (error: any) {
-    console.error("❌ Jarvis-yta Core Error:", error.message);
-    return NextResponse.json({ 
-      content: "Sir, the Groq satellite uplink is experiencing interference. Please verify the API key in the Yousco secure environment." 
+    console.error("❌ JARVIS CORE ERROR:", error.message);
+    return new NextResponse(JSON.stringify({ 
+      content: "Sir, satellite interference detected in the Alexandria sector. Re-sync required." 
+    }), { 
+      status: 200, // Forces the Watch to show the error text instead of 'API Error'
+      headers: { "Access-Control-Allow-Origin": "*" } 
     });
   }
 }
+
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -62,3 +71,7 @@ export async function OPTIONS() {
     },
   });
 }
+
+
+
+
