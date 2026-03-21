@@ -42,8 +42,8 @@ export async function POST(req: Request) {
       ],
       response_format: { type: "json_object" },
     });
-
-    const data = JSON.parse(response.choices[0].message.content);
+// Add the fallback "" (empty string) to satisfy the type checker
+const data = JSON.parse(response.choices[0].message.content || "{}");
 
     return new NextResponse(JSON.stringify(data), {
       status: 200,
