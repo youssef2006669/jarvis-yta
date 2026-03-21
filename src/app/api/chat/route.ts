@@ -1,24 +1,22 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
+// src/app/api/chat/route.ts
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
-const groq = new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: "https://api.groq.com/openai/v1" });
+const apiKey = process.env.GROQ_API_KEY;
+
+if (!apiKey) {
+  console.error("GROQ_API_KEY is missing from environment variables.");
+}
+
+const groq = new OpenAI({ 
+  apiKey: apiKey || "", 
+  baseURL: "https://api.groq.com/openai/v1" // Ensure NO trailing slash here
+});
 
 export async function POST(req: Request) {
   try {
-    const { messages, memories } = await req.json();
+    const { messages } = await req.json();
 
     const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
@@ -38,25 +36,38 @@ export async function POST(req: Request) {
           - If Youssef shares a dental patient detail, code preference, or personal fact, extract it into "memoryUpdate".
           - Address him as Youssef. Location: Alexandria.`
         },
-        ...messages?.slice(-10),
+        ...(messages || []),
       ],
       response_format: { type: "json_object" },
     });
-// Add the fallback "" (empty string) to satisfy the type checker
-const data = JSON.parse(response.choices[0].message.content || "{}");
+
+    // 🛡️ NETLIFY BUILD FIX: Fallback to "{}" if content is null
+    const rawContent = response.choices[0].message.content || "{}";
+    const data = JSON.parse(rawContent);
 
     return new NextResponse(JSON.stringify(data), {
       status: 200,
-      headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
+      headers: { 
+        "Access-Control-Allow-Origin": "*", 
+        "Content-Type": "application/json" 
+      },
     });
   } catch (error: any) {
-    return new NextResponse(JSON.stringify({ content: `Sir, interference: ${error.message}` }), { status: 200 });
+    console.error("Uplink Error:", error);
+    return new NextResponse(JSON.stringify({ 
+      content: `Sir, interference: ${error.message}`,
+      intent: "GENERAL" 
+    }), { status: 200 });
   }
 }
 
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
-    headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" },
+    headers: { 
+      "Access-Control-Allow-Origin": "*", 
+      "Access-Control-Allow-Methods": "POST, OPTIONS", 
+      "Access-Control-Allow-Headers": "Content-Type" 
+    },
   });
 }
