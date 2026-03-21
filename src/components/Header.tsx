@@ -22,7 +22,7 @@ export default function Header() {
     <header className="w-full border-b border-slate-800 bg-slate-950/50 backdrop-blur-md p-4 flex justify-between items-center px-8">
       {/* Left: Agency Identity */}
       <div className="flex flex-col">
-        <h1 className="text-blue-500 font-mono font-bold tracking-widest text-xl">YOUSCO OS</h1>
+        <h1 className="text-blue-500 font-mono font-bold tracking-widest text-xl">JARVIS-YTA</h1>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]" />
           <span className="text-[10px] text-slate-400 uppercase tracking-tighter">System Status: Online</span>
