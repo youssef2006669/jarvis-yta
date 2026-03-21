@@ -1,77 +1,62 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai"; 
+import OpenAI from "openai";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-export const dynamic = "force-dynamic";
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
 
-// Initialize using the Environment Variable
-const groq = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: "https://api.groq.com/openai/v1", 
-});
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app);
+const groq = new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: "https://api.groq.com/openai/v1" });
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    
-    // Ensure 'messages' exists (even if the Watch sends a simple string)
-    const messages = body.messages || [{ role: "user", content: body.content || "Report status." }];
+    const { messages, memories } = await req.json();
 
     const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile", 
+      model: "llama-3.3-70b-versatile",
       messages: [
         {
           role: "system",
-          content: `You are JARVIS-YTA, a technical interface for Youssef.
+          content: `You are JARVIS-YTA. Respond in JSON format only.
           
-          CONTEXT:
-          - Youssef is a Dental Student in Alexandria & a Web Developer (React/Astro).
-          - "Yousco" is his personal brand/concept, not a corporate industry.
-          
-          RULES:
-          1. No Hallucinations: If the 'memories' array is empty, the schedule is empty. 
-          2. Precision: Use dental terminology for university tasks and dev terms for coding.
-          3. Brevity: High-efficiency, short responses only. Address him as Youssef.`
+          STRUCTURE:
+          {
+            "content": "Your verbal response to Youssef",
+            "memoryUpdate": "A short fact to save to his Neural Bank (null if nothing new)",
+            "intent": "CLINICAL" | "DEV" | "GENERAL"
+          }
+
+          INSTRUCTIONS:
+          - If Youssef shares a dental patient detail, code preference, or personal fact, extract it into "memoryUpdate".
+          - Address him as Youssef. Location: Alexandria.`
         },
-        ...messages,
+        ...messages.slice(-10),
       ],
+      response_format: { type: "json_object" },
     });
 
-    const content = response.choices[0].message.content;
+    const data = JSON.parse(response.choices[0].message.content);
 
-    // --- UNIVERSAL RESPONSE WITH CORS ---
-    return new NextResponse(JSON.stringify({ content }), {
+    return new NextResponse(JSON.stringify(data), {
       status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Content-Type": "application/json",
-      },
+      headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
     });
-
   } catch (error: any) {
-    console.error("❌ JARVIS CORE ERROR:", error.message);
-    return new NextResponse(JSON.stringify({ 
-      content: "Sir, satellite interference detected in the Alexandria sector. Re-sync required." 
-    }), { 
-      status: 200, // Forces the Watch to show the error text instead of 'API Error'
-      headers: { "Access-Control-Allow-Origin": "*" } 
-    });
+    return new NextResponse(JSON.stringify({ content: `Sir, interference: ${error.message}` }), { status: 200 });
   }
 }
-
 
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
+    headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" },
   });
 }
-
-
-
-
