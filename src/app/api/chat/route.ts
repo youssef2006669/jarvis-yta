@@ -38,7 +38,7 @@ export async function POST(req: Request) {
           - If Youssef shares a dental patient detail, code preference, or personal fact, extract it into "memoryUpdate".
           - Address him as Youssef. Location: Alexandria.`
         },
-        ...messages.slice(-10),
+        ...messages?.slice(-10),
       ],
       response_format: { type: "json_object" },
     });
